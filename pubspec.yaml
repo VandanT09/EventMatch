@@ -1,0 +1,50 @@
+name: new_eventmatch
+description: "A new Flutter project."
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  table_calendar: ^3.2.0
+  image_picker: ^1.1.2
+  cupertino_icons: ^1.0.8
+  swipable_stack: ^2.0.0
+  card_swiper: ^3.0.1
+  appinio_swiper: ^2.1.1
+  flutter_card_swiper: ^7.0.2
+  flutter_svg: ^2.0.17
+  font_awesome_flutter: ^10.2.0
+  share_plus: ^10.1.4
+  path_provider: ^2.1.5
+  firebase_core: ^3.12.0
+  firebase_auth: ^5.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3 # ✅ Moved to dev_dependencies
+
+flutter:
+  uses-material-design: true
+  assets:
+    - images/EventMatch_Adobe.png
+    - images/googlelogo.webp
+    - images/EventMatch_NoBg.jpg
+    - images/convert.webp
+    - images/360_F_1035112255_A9mSbSC4sSJJj4S9Y4eDzxNa7DIqUzed.webp
+    - images/celebration-with-balloons-hats-and-horns.webp
+    - images/cropped-hands-holding-sparkler-at-night-bangladesh.webp
+    - images/crowd-music-concert_1048944-10571616.webp
+    - images/party-time.webp
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "images/EventMatch_Adobe.png"
+  adaptive_icon_background: "#FFFFFF" # ✅ White background for Android adaptive icons
+  adaptive_icon_foreground: "images/EventMatch_Adobe.png" # ✅ Foreground for Android adaptive icons

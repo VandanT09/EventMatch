@@ -1,0 +1,32 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // Ensure this version matches your Gradle wrapper
+        classpath 'com.android.tools.build:gradle:8.3.0'  // Downgrade to 7.4.2 if needed
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = "../build"
+
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
+
+configurations.all {
+    resolutionStrategy.force 'androidx.lifecycle:lifecycle-common:2.6.1'
+}

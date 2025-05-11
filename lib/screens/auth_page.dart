@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'home_page.dart'; // Replace with the correct path to your HomePage file
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'home_page.dart';
+import 'event_preferences_page.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -15,39 +17,70 @@ class _AuthPageState extends State<AuthPage> {
       TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
 
   bool isLogin = true;
-
   static const Color brandColor = Color(0xFFE86343);
 
   Future<void> signupWithEmailPass(String emailAddress, String password) async {
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailAddress,
-        password: password,
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+              email: emailAddress, password: password);
+
+      User? user = userCredential.user;
+
+      if (user != null) {
+        // Set additional user info including displayName and bio
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'name': 'Pranjal',
+          'email': emailAddress,
+          'age': int.tryParse(_ageController.text.trim()) ?? 0,
+          'location': _locationController.text.trim(),
+          'bio':
+              'Hello! I am Pranjal, 50, from Mumbai. I love doing various art work, and Music.', // Add predefined bio here
+          'displayName': 'Pranjal', // Add displayName here
+          'createdAt': Timestamp.now(),
+        });
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventPreferencePage(name: 'Pranjal'),
+          ),
+        );
+      }
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
-        print('The password provided is too weak.');
-      } else if (e.code == 'email-already-in-use') {
-        print('The account already exists for that email.');
+      if (e.code == 'email-already-in-use') {
+        _showErrorDialog("Email already in use.");
+      } else if (e.code == 'weak-password') {
+        _showErrorDialog("The password provided is too weak.");
+      } else {
+        _showErrorDialog(e.message ?? "Authentication error.");
       }
     } catch (e) {
-      print(e.hashCode);
+      _showErrorDialog("Unexpected error: $e");
     }
   }
 
-  Future<void> SigninWithEmailPass(String emailAddress, String password) async {
+  Future<void> signinWithEmailPass(String emailAddress, String password) async {
     try {
-      await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: emailAddress, password: password);
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailAddress,
+        password: password,
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
-        print('No user found for that email.');
-      } else if (e.code == 'wrong-password') {
-        print('Wrong password provided for that user.');
+        _showErrorDialog('No account found. Please sign up first.');
+      } else {
+        _showErrorDialog(e.message ?? "An error occurred");
       }
     }
   }
@@ -68,26 +101,39 @@ class _AuthPageState extends State<AuthPage> {
     );
   }
 
-  void _showAccountNotFoundDialog() {
+  void _checkAdminPasscode() {
+    TextEditingController passcodeController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('No User Found'),
-        content: const Text(
-            'No account exists with this email. Do you want to create a new account?'),
+        title: const Text("Admin Access"),
+        content: TextField(
+          controller: passcodeController,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: 'Enter Admin Passcode'),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: brandColor),
             onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                isLogin = false;
-              });
+              if (passcodeController.text.trim() == 'pass@123') {
+                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomePage()),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Incorrect admin passcode.")),
+                );
+              }
             },
-            child: const Text('Create Account'),
+            child: const Text('Enter'),
           ),
         ],
       ),
@@ -99,32 +145,28 @@ class _AuthPageState extends State<AuthPage> {
     required TextEditingController controller,
     required String label,
     bool isPassword = false,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       child: TextFormField(
         controller: controller,
         obscureText: isPassword,
-        style: const TextStyle(fontSize: 16),
+        keyboardType: keyboardType,
+        style: const TextStyle(fontSize: 16, color: Colors.black87),
         decoration: InputDecoration(
-          prefixIcon: Icon(icon),
+          prefixIcon: Icon(icon, color: Colors.black54),
           labelText: label,
-          labelStyle: const TextStyle(fontSize: 16, color: Colors.grey),
-          alignLabelWithHint: true,
-          floatingLabelBehavior: FloatingLabelBehavior.auto,
+          labelStyle: const TextStyle(fontSize: 16, color: Colors.black54),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: Colors.grey),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Colors.grey),
-          ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: brandColor),
+            borderSide: const BorderSide(color: brandColor),
           ),
           filled: true,
           fillColor: Colors.white,
@@ -133,72 +175,8 @@ class _AuthPageState extends State<AuthPage> {
     );
   }
 
-  Widget _buildSocialButton({
-    required String text,
-    IconData? icon,
-    Widget? iconWidget,
-    Color iconColor = Colors.black87,
-    required VoidCallback onPressed,
-    Color backgroundColor = Colors.white,
-    Color textColor = Colors.black87,
-    bool outlined = false,
-  }) {
-    final buttonStyle = outlined
-        ? OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            foregroundColor: iconColor,
-            side: BorderSide(color: iconColor),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          )
-        : ElevatedButton.styleFrom(
-            backgroundColor: backgroundColor,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: const BorderSide(color: Colors.black12),
-            ),
-          );
-
-    final content = Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        iconWidget ??
-            (icon != null
-                ? Icon(icon, color: iconColor, size: 20)
-                : const SizedBox.shrink()),
-        if (iconWidget != null || icon != null) const SizedBox(width: 12),
-        Text(
-          text,
-          style: TextStyle(
-            color: outlined ? iconColor : textColor,
-            fontSize: 16,
-          ),
-        ),
-      ],
-    );
-
-    return SizedBox(
-      width: double.infinity,
-      child: outlined
-          ? OutlinedButton(
-              onPressed: onPressed,
-              style: buttonStyle,
-              child: content,
-            )
-          : ElevatedButton(
-              onPressed: onPressed,
-              style: buttonStyle,
-              child: content,
-            ),
-    );
-  }
-
-  Widget _buildPrimaryButton({
-    required String text,
-    required VoidCallback onPressed,
-  }) {
+  Widget _buildPrimaryButton(
+      {required String text, required VoidCallback onPressed}) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -206,18 +184,13 @@ class _AuthPageState extends State<AuthPage> {
         style: ElevatedButton.styleFrom(
           backgroundColor: brandColor,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        child: Text(text,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w500)),
       ),
     );
   }
@@ -229,61 +202,39 @@ class _AuthPageState extends State<AuthPage> {
         Image.asset("images/EventMatch_NoBg.jpg", height: 100),
         const SizedBox(height: 16),
         _buildTextField(
-          icon: Icons.email,
-          controller: _emailControllerLogin,
-          label: 'Email',
-        ),
+            icon: Icons.email,
+            controller: _emailControllerLogin,
+            label: 'Email'),
         const SizedBox(height: 16),
         _buildTextField(
-          icon: Icons.lock,
-          controller: _passwordControllerLogin,
-          label: 'Password',
-          isPassword: true,
-        ),
+            icon: Icons.lock,
+            controller: _passwordControllerLogin,
+            label: 'Password',
+            isPassword: true),
         const SizedBox(height: 24),
         _buildPrimaryButton(
           text: 'Sign in',
           onPressed: () {
-            print("okay");
-            SigninWithEmailPass(_emailControllerLogin.text.trim(),
-                _passwordControllerLogin.text.trim());
+            signinWithEmailPass(
+              _emailControllerLogin.text.trim(),
+              _passwordControllerLogin.text.trim(),
+            );
           },
         ),
-        const SizedBox(height: 16),
         TextButton(
-          onPressed: () {},
-          child: Text(
-            'Forgot Password?',
-            style: TextStyle(
-              color: brandColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          onPressed: _checkAdminPasscode,
+          child: const Text('Sign in as Admin',
+              style: TextStyle(
+                  color: Colors.deepPurple, fontWeight: FontWeight.bold)),
         ),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text(
-            'Don\'t Have an Account?',
-            style: TextStyle(
-              color: brandColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+          const Text("Don't have an account?",
+              style: TextStyle(color: Colors.black54)),
+          TextButton(
+            onPressed: () => setState(() => isLogin = false),
+            child: const Text("Create Account!",
+                style: TextStyle(color: Colors.blue)),
           ),
-          const SizedBox(
-            width: 6,
-          ),
-          GestureDetector(
-            child: Text(
-              "Create Account!",
-              style: TextStyle(color: Colors.blue),
-            ),
-            onTap: () {
-              setState(() {
-                isLogin = false;
-              });
-            },
-          )
         ]),
       ],
     );
@@ -296,114 +247,45 @@ class _AuthPageState extends State<AuthPage> {
         Image.asset("images/EventMatch_NoBg.jpg", height: 100),
         const SizedBox(height: 16),
         _buildTextField(
-          icon: Icons.person,
-          controller: _nameController,
-          label: 'Name',
-        ),
+            icon: Icons.person, controller: _nameController, label: 'Name'),
         const SizedBox(height: 16),
         _buildTextField(
-          icon: Icons.email,
-          controller: _emailController,
-          label: 'Email',
-        ),
+            icon: Icons.calendar_today,
+            controller: _ageController,
+            label: 'Age',
+            keyboardType: TextInputType.number),
         const SizedBox(height: 16),
         _buildTextField(
-          icon: Icons.lock,
-          controller: _passwordController,
-          label: 'Password',
-          isPassword: true,
-        ),
+            icon: Icons.location_on,
+            controller: _locationController,
+            label: 'Location'),
+        const SizedBox(height: 16),
+        _buildTextField(
+            icon: Icons.email, controller: _emailController, label: 'Email'),
+        const SizedBox(height: 16),
+        _buildTextField(
+            icon: Icons.lock,
+            controller: _passwordController,
+            label: 'Password',
+            isPassword: true),
         const SizedBox(height: 24),
         _buildPrimaryButton(
           text: 'Sign Up',
           onPressed: () {
-            print("okay");
             signupWithEmailPass(
-                _emailController.text.trim(), _passwordController.text.trim());
+              _emailController.text.trim(),
+              _passwordController.text.trim(),
+            );
           },
         ),
-        const SizedBox(height: 16),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text(
-            'Already Have an Account?',
-            style: TextStyle(
-              color: brandColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+          const Text("Already have an account?",
+              style: TextStyle(color: Colors.black54)),
+          TextButton(
+            onPressed: () => setState(() => isLogin = true),
+            child: const Text("Login", style: TextStyle(color: Colors.blue)),
           ),
-          const SizedBox(
-            width: 6,
-          ),
-          GestureDetector(
-            child: Text(
-              "Login",
-              style: TextStyle(color: Colors.blue),
-            ),
-            onTap: () {
-              setState(() {
-                isLogin = true;
-              });
-            },
-          )
         ]),
-
-        // _buildSocialButton(
-        //   text: 'Continue with Google',
-        //   iconWidget: Image.asset(
-        //     'images/googlelogo.webp',
-        //     height: 24,
-        //   ),
-        //   onPressed: () {},
-        // ),
-        // const SizedBox(height: 12),
-        // _buildSocialButton(
-        //   text: 'Continue with Email',
-        //   icon: Icons.mail_outline,
-        //   iconColor: Colors.black87,
-        //   onPressed: () {},
-        // ),
-        // const SizedBox(height: 12),
-        // _buildSocialButton(
-        //   text: 'Continue with Apple',
-        //   icon: Icons.apple,
-        //   iconColor: Colors.black,
-        //   onPressed: () {},
-        // ),
-        // Padding(
-        //   padding: const EdgeInsets.symmetric(vertical: 24),
-        //   child: Row(
-        //     children: const [
-        //       Expanded(child: Divider()),
-        //       Padding(
-        //         padding: EdgeInsets.symmetric(horizontal: 16),
-        //         child: Text(
-        //           'or',
-        //           style: TextStyle(color: Colors.grey),
-        //         ),
-        //       ),
-        //       Expanded(child: Divider()),
-        //     ],
-        //   ),
-        // ),
-        // _buildSocialButton(
-        //   text: 'Continue with Facebook',
-        //   icon: Icons.facebook,
-        //   iconColor: Colors.blue,
-        //   onPressed: () {},
-        // ),
-        // const SizedBox(height: 24),
-        // _buildPrimaryButton(
-        //   text: 'Sign up',
-        //   onPressed: () {
-        //     WidgetsBinding.instance.addPostFrameCallback((_) {
-        //       Navigator.push(
-        //         context,
-        //         MaterialPageRoute(builder: (context) => const HomePage()),
-        //       );
-        //     });
-        //   },
-        // ),
       ],
     );
   }
@@ -412,22 +294,20 @@ class _AuthPageState extends State<AuthPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: brandColor,
-      resizeToAvoidBottomInset:
-          true, // This ensures the layout adjusts when the keyboard appears.
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(24),
+            const Padding(
+              padding: EdgeInsets.all(24),
               child: Row(
-                children: const [
+                children: [
                   Text(
                     'EventMatch',
                     style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                 ],
               ),
@@ -464,7 +344,7 @@ class _AuthPageState extends State<AuthPage> {
                           TextButton(
                             onPressed: () => setState(() => isLogin = false),
                             child: Text(
-                              'Sign up',
+                              'Sign Up',
                               style: TextStyle(
                                 color: !isLogin ? brandColor : Colors.grey,
                                 fontWeight: !isLogin
@@ -497,11 +377,8 @@ class _AuthPageState extends State<AuthPage> {
                         top: 16,
                       ),
                       child: const Text(
-                        'By proceeding, you agree to EventMatch\'s Privacy Policy, User Agreement and T&Cs',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
+                        'By proceeding, you agree to EventMatch\'s Privacy Policy, User Agreement and T&Cs.',
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
                         textAlign: TextAlign.center,
                       ),
                     ),

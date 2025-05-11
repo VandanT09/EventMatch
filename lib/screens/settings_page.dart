@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'about_page.dart'; // Import About Page
+import 'package:provider/provider.dart';
+import 'theme_notifier.dart';
+import 'about_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -10,7 +12,6 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _notificationsEnabled = true;
-  bool _darkMode = false;
 
   void _showComingSoonMessage(String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -20,6 +21,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDarkMode = themeNotifier.isDarkMode;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -42,23 +46,11 @@ class _SettingsPageState extends State<SettingsPage> {
           SwitchListTile(
             title: const Text("Dark Mode"),
             subtitle: const Text("Enable dark mode theme"),
-            value: _darkMode,
+            value: isDarkMode,
             onChanged: (bool value) {
-              setState(() {
-                _darkMode = value;
-              });
+              themeNotifier.toggleTheme(value);
             },
           ),
-          // ListTile(
-          //   leading: const Icon(Icons.language),
-          //   title: const Text("Change Language"),
-          //   onTap: () => _showComingSoonMessage("Language settings"),
-          // ),
-          // ListTile(
-          //   leading: const Icon(Icons.lock),
-          //   title: const Text("Privacy & Security"),
-          //   onTap: () => _showComingSoonMessage("Privacy settings"),
-          // ),
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text("About"),

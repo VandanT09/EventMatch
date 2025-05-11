@@ -1,21 +1,5 @@
 import 'package:flutter/material.dart';
-import 'auth_page.dart'; // Import AuthPage for the transition
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false, // Removes the debug banner
-      home: const SplashScreen(),
-    );
-  }
-}
+import 'auth_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -30,13 +14,15 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _circleAnimation;
   late final Animation<double> _logoSizeAnimation;
 
+  bool _navigated = false;
+
   @override
   void initState() {
     super.initState();
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2), // Faster animation duration
+      duration: const Duration(seconds: 2),
     );
 
     _circleAnimation = Tween<double>(begin: 0, end: 1000).animate(
@@ -49,10 +35,13 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Transition to AuthPage after animation completes and a short delay
     _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
+      if (status == AnimationStatus.completed && !_navigated) {
+        _navigated = true;
+
         Future.delayed(const Duration(seconds: 1), () {
+          if (!mounted) return;
+
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const AuthPage()),
           );
@@ -76,54 +65,46 @@ class _SplashScreenState extends State<SplashScreen>
           return Stack(
             alignment: Alignment.center,
             children: [
-              // Gradient background
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.deepOrange.shade700, // Top gradient color
-                      Colors.orangeAccent.shade100, // Bottom gradient color
+                      Colors.deepOrange.shade700,
+                      Colors.orangeAccent.shade100,
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
                 ),
               ),
-              // Expanding white circle animation
               Container(
                 width: _circleAnimation.value,
                 height: _circleAnimation.value,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
                 ),
               ),
-              // Logo and text animation
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Animated logo size
                   Image.asset(
-                    'images/EventMatch_Adobe.png', // Replace with your transparent logo
+                    'images/EventMatch_Adobe.png',
                     height: _logoSizeAnimation.value,
                   ),
+                  if (_circleAnimation.value > 900) const SizedBox(height: 20),
                   if (_circleAnimation.value > 900)
-                    Column(
-                      children: [
-                        const SizedBox(height: 20),
-                        AnimatedLetters(
-                          text: 'EventMatch',
-                          gradient: const LinearGradient(
-                            colors: [Colors.orange, Colors.blue],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          style: const TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                    const AnimatedLetters(
+                      text: 'EventMatch',
+                      gradient: LinearGradient(
+                        colors: [Colors.orange, Colors.blue],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      style: TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                 ],
               ),
@@ -135,7 +116,6 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// Animated letter-by-letter gradient text widget
 class AnimatedLetters extends StatefulWidget {
   final String text;
   final TextStyle style;
@@ -162,12 +142,9 @@ class _AnimatedLettersState extends State<AnimatedLetters>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(
-          milliseconds:
-              1400), // Faster animation duration (2 seconds for all text)
+      duration: const Duration(milliseconds: 1400),
     )..forward();
 
-    // Create list of animations for each letter with an even faster speed
     _letterAnimations = List.generate(widget.text.length, (index) {
       return Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(
@@ -198,7 +175,6 @@ class _AnimatedLettersState extends State<AnimatedLetters>
         mainAxisSize: MainAxisSize.min,
         children: List.generate(widget.text.length, (index) {
           final letter = widget.text[index];
-
           return FadeTransition(
             opacity: _letterAnimations[index],
             child: Text(

@@ -5,7 +5,10 @@ buildscript {
     }
     dependencies {
         // Ensure this version matches your Gradle wrapper
-        classpath 'com.android.tools.build:gradle:8.3.0'  // Downgrade to 7.4.2 if needed
+        classpath 'com.android.tools.build:gradle:8.3.0'
+        classpath 'com.google.gms:google-services:4.3.15' 
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.2' // latest version for Crashlytics
+ // Downgrade to 7.4.2 if needed
     }
 }
 

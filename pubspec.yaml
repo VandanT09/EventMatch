@@ -20,8 +20,19 @@ dependencies:
   font_awesome_flutter: ^10.2.0
   share_plus: ^10.1.4
   path_provider: ^2.1.5
-  firebase_core: ^3.12.0
+  firebase_core: ^3.13.0
   firebase_auth: ^5.5.0
+  cloud_firestore: ^5.6.6
+  provider: ^6.1.4
+  shared_preferences: ^2.5.3
+  firebase_storage: ^12.4.5
+  tflite_flutter: ^0.11.0
+  http: ^1.3.0
+  ffi: ^2.1.3
+  video_player: ^2.9.5
+  razorpay_flutter: ^1.4.0
+  fluttertoast: ^8.2.12
+  # stripe_payment: ^1.1.4
 
 dev_dependencies:
   flutter_test:
@@ -41,6 +52,37 @@ flutter:
     - images/cropped-hands-holding-sparkler-at-night-bangladesh.webp
     - images/crowd-music-concert_1048944-10571616.webp
     - images/party-time.webp
+    - ML/events.json
+    - videos/2361938-uhd_3840_2160_30fps.mp4
+    - videos/2890196-hd_1920_1080_30fps.mp4
+    - videos/2941129-uhd_4096_2160_24fps.mp4
+    - videos/2977213-hd_1920_1080_24fps.mp4
+    - videos/3049544-uhd_4096_2160_24fps.mp4
+    - videos/3195885-uhd_3840_2160_25fps.mp4
+    - videos/3577616-hd_1920_1080_30fps.mp4
+    - videos/3722010-hd_1920_1080_24fps.mp4
+    - videos/4916733-hd_1920_1080_30fps.mp4
+    - videos/SampleVideo_640x360_10mb.mp4
+    - videos/SampleVideo_1280x720_1mb.mp4
+    - videos/SampleVideo_1280x720_2mb.mp4
+    - videos/2066560-hd_1920_1080_30fps.mp4
+    - images/DJ-crowd.webp
+    - images/0x0.webp
+    - images/360_F_116250654_SNR51fpqWlyj6WrvQbaYTiR8RLefa8rt.webp
+    - images/360_F_552794679_X6Jg3Hn2MdCHvMNTyBPzHx5vOTqoaE2e.webp
+    - images/360_F_1035112255_A9mSbSC4sSJJj4S9Y4eDzxNa7DIqUzed.webp
+    - images/360_F_1036665878_9xNdHickJpGkgXucpSFDoyapCBmUN5tY.webp
+    - images/360_F_1158125502_lpWGmBXtgRMdIkvAkDT2KmM0BpkIqHz3.webp
+    - images/chi-street-art-1800x900.webp
+    - images/classical-theatre.webp
+    - images/esports-arena.webp
+    - images/image-generator-freepik-7.webp
+    - images/360_F_297078136_J3kH3VoAy4QcVuGbF0HQP2BaNCpaF7gP.webp
+    - images/360_F_1411553904_hpm4ZNjpUMRaWTea57ML423oWB0eKjLl.webp
+    - images/360_F_1411553904_hpm4ZNjpUMRaWTea57ML423oWB0eKjLl.webp
+    - images/smiling-mature-husband-and-wife-toasting-with-wine-at-dinner.webp
+    - images/360_F_1144239139_4QWN1AoLoMH1TWuuRZ7c7DwDenPfeYSh.webp
+    - images/360_F_111505345_gWgyxCe1ujllUf3Ww5XDZW09i4D4MHFs.webp
 
 flutter_launcher_icons:
   android: true

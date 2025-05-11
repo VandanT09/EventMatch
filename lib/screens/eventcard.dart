@@ -5,9 +5,39 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'ticket_booking_page.dart';
+import 'dart:math';
+
+// Function to generate a random date within the next 30 days
+String generateRandomDate() {
+  final random = Random();
+  final now = DateTime.now();
+  final randomDays =
+      random.nextInt(30); // Random number of days within the next 30 days
+  final randomDate = now.add(Duration(days: randomDays));
+
+  // Format the date (e.g., 2025-05-30)
+  return '${randomDate.year}-${randomDate.month.toString().padLeft(2, '0')}-${randomDate.day.toString().padLeft(2, '0')}';
+}
+
+// Function to generate a random price between 100 and 1000
+double generateRandomPrice() {
+  final random = Random();
+  // Random price between 100 and 1000
+  return 100 + random.nextInt(900).toDouble();
+}
 
 class EventCardScreen extends StatefulWidget {
-  const EventCardScreen({Key? key}) : super(key: key);
+  final Function(Map<String, dynamic>)? onBookmark;
+
+  const EventCardScreen(
+      {super.key,
+      this.onBookmark,
+      required void Function(String eventId, String eventCategory, bool isLiked)
+          onEventRated,
+      required List<Map<String, dynamic>> recommendedEvents,
+      required bool isLoading});
 
   @override
   _EventCardScreenState createState() => _EventCardScreenState();
@@ -18,15 +48,15 @@ class _EventCardScreenState extends State<EventCardScreen> {
   String? _swipeFeedback;
   int? _currentEventIndex;
 
-  // Store the history of actions (liked, disliked, saved)
-  List<Map<String, dynamic>> _actionHistory = [];
-  List<bool> _savedEvents = List.filled(6, false); // Track saved events
+  final List<bool> _savedEvents = List.filled(22, false);
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String userId = 'test_user_123'; // Replace with FirebaseAuth UID later
 
   final List<Map<String, String>> events = [
     {
       "name": "ColdPlay",
       "description":
-          "Coldplay is a British rock band formed in London in 1997. The band consists of vocalist and pianist Chris Martin, guitarist Jonny Buckland, bassist Guy Berryman, drummer Will Champion, and manager Phil Harvey.",
+          "Coldplay is a British rock band formed in London in 1997...",
       "image": "images/convert.webp"
     },
     {
@@ -36,27 +66,123 @@ class _EventCardScreenState extends State<EventCardScreen> {
     },
     {
       "name": "ChainSmokers",
-      "description":
-          "The Chainsmokers are an American electronic DJ and production duo consisting of Alex Pall and Drew Taggart.",
+      "description": "The Chainsmokers are an American electronic DJ duo...",
       "image": "images/celebration-with-balloons-hats-and-horns.webp"
     },
     {
       "name": "SunBurn",
       "description":
-          "Sunburn Festival is a commercial electronic dance music festival held in India. It was started by entrepreneur Shailendra Singh of Percept Ltd.",
+          "Sunburn Festival is a commercial electronic dance music festival...",
       "image": "images/cropped-hands-holding-sparkler-at-night-bangladesh.webp"
     },
     {
       "name": "Food Carnival",
       "description":
-          "A food carnival event is a celebration that showcases a variety of foods from around the world, often featuring creative and mouth-watering dishes created by experienced chefs.",
+          "A food carnival showcasing mouth-watering dishes from around the world.",
       "image": "images/crowd-music-concert_1048944-10571616.webp"
     },
     {
       "name": "YouTube FanFest",
       "description":
-          "YouTube FanFest is a unique event that brings together fans of various franchises, including video games, sports, and entertainment.",
+          "YouTube FanFest brings together fans of games, sports, and entertainment.",
       "image": "images/party-time.webp"
+    },
+    {
+      "name": "Electronic Beats Festival",
+      "description":
+          "Electronic Beats Festival brings together fans of music, sports, and entertainment.",
+      "image": "images/DJ-crowd.webp"
+    },
+    {
+      "name": "Soccer World Cup",
+      "description":
+          "Soccer World Cup brings together fans of games, sports, and entertainment.",
+      "image": "images/360_F_116250654_SNR51fpqWlyj6WrvQbaYTiR8RLefa8rt.webp"
+    },
+    {
+      "name": "Tennis Grand Slam",
+      "description":
+          "Tennis Grand Slam brings together fans of games, sports, and entertainment.",
+      "image": "images/360_F_1158125502_lpWGmBXtgRMdIkvAkDT2KmM0BpkIqHz3.webp"
+    },
+    {
+      "name": "Tech Innovations Expo",
+      "description":
+          "Tech Innovations Expo brings together fans of tech enthusiasts and entertainment.",
+      "image": "images/0x0.webp"
+    },
+    {
+      "name": "AI & Robotics Summit",
+      "description":
+          "AI & Robotics Summit brings together AI, ML & lots of complex architecture into picture.",
+      "image": "images/image-generator-freepik-7.webp"
+    },
+    {
+      "name": "Web Development",
+      "description":
+          "Web Development Conference. Web 2.0, 3.0 is here! Explore the realm thrill of making and designing websites from scratch!",
+      "image": "images/360_F_552794679_X6Jg3Hn2MdCHvMNTyBPzHx5vOTqoaE2e.webp"
+    },
+    {
+      "name": "Modern Art Exhibit",
+      "description":
+          "Modern Art Exhibitio brings together fans of art, music, and fashion.",
+      "image": "images/360_F_1036665878_9xNdHickJpGkgXucpSFDoyapCBmUN5tY.webp"
+    },
+    {
+      "name": "Street Art Festival",
+      "description":
+          "Street Art Festival brings together fans of streets of India, sports, and entertainment.",
+      "image": "images/chi-street-art-1800x900.webp"
+    },
+    {
+      "name": "Modern Drama Play",
+      "description":
+          "Modern Drama Play brings together fans of games, sports, and entertainment.",
+      "image": "images/classical-theatre.webp"
+    },
+    {
+      "name": "Coding Bootcamp",
+      "description":
+          "Coding Bootcamp brings together fans of games, sports, and entertainment.",
+      "image": "images/360_F_297078136_J3kH3VoAy4QcVuGbF0HQP2BaNCpaF7gP.webp"
+    },
+    {
+      "name": "Creative Writing Workshop",
+      "description":
+          "Creative Writing Workshop brings together fans of games, sports, and entertainment.",
+      "image": "images/360_F_1411553904_hpm4ZNjpUMRaWTea57ML423oWB0eKjLl.webp"
+    },
+    {
+      "name": "E-sports Tournament",
+      "description":
+          "E-sports Tournament brings together fans of games, sports, and entertainment.",
+      "image": "images/esports-arena.webp"
+    },
+    {
+      "name": "Gourmet Dinner Party",
+      "description":
+          "Gourmet Dinner Party brings together fans of games, sports, and entertainment.",
+      "image":
+          "images/smiling-mature-husband-and-wife-toasting-with-wine-at-dinner.webp"
+    },
+    {
+      "name": "VR Gaming Experience",
+      "description":
+          "VR Gaming Experience brings together fans of games, sports, and entertainment.",
+      "image": "images/360_F_1144239139_4QWN1AoLoMH1TWuuRZ7c7DwDenPfeYSh.webp"
+    },
+    {
+      "name": "Vintage Clothing Market",
+      "description":
+          "Vintage Clothing Market brings together fans of games, sports, and entertainment.",
+      "image": "images/360_F_111505345_gWgyxCe1ujllUf3Ww5XDZW09i4D4MHFs.webp"
+    },
+    {
+      "name": "Shakespeare’s Art",
+      "description":
+          "Shakespeare’s Globe Performance brings together fans of games, sports, and entertainment.",
+      "image": "images/360_F_1035112255_A9mSbSC4sSJJj4S9Y4eDzxNa7DIqUzed.webp"
     },
   ];
 
@@ -73,28 +199,31 @@ class _EventCardScreenState extends State<EventCardScreen> {
                   cardsCount: events.length,
                   onSwipe: (previousIndex, targetIndex, direction) {
                     setState(() {
-                      // Determine LIKE or DISLIKE
                       if (direction == CardSwiperDirection.right ||
                           direction == CardSwiperDirection.top) {
                         _swipeFeedback = 'LIKE';
+
+                        _firestore.collection('user_actions').add({
+                          'userId': userId,
+                          'eventName': events[previousIndex]['name'],
+                          'action': 'like',
+                          'timestamp': FieldValue.serverTimestamp(),
+                        });
                       } else if (direction == CardSwiperDirection.left) {
                         _swipeFeedback = 'DISLIKE';
+
+                        _firestore.collection('user_actions').add({
+                          'userId': userId,
+                          'eventName': events[previousIndex]['name'],
+                          'action': 'dislike',
+                          'timestamp': FieldValue.serverTimestamp(),
+                        });
                       } else {
                         _swipeFeedback = null;
                       }
 
-                      // Store the action in history (if it's LIKE or DISLIKE)
-                      if (_swipeFeedback != null) {
-                        _actionHistory.add({
-                          'eventIndex': previousIndex,
-                          'action': _swipeFeedback,
-                        });
-                      }
-
-                      // Update current event index
                       _currentEventIndex = targetIndex;
 
-                      // Reset the swipe feedback after 1 second
                       Future.delayed(const Duration(seconds: 1), () {
                         setState(() {
                           _swipeFeedback = null;
@@ -103,18 +232,46 @@ class _EventCardScreenState extends State<EventCardScreen> {
                     });
                     return true;
                   },
-                  cardBuilder: (context, index, horizontalOffsetPercentage,
-                      verticalOffsetPercentage) {
-                    final event = events[index];
+                  cardBuilder: (context, index, hOffset, vOffset) {
+                    final eventMap = events[index];
+
+                    // Generate random date and price for each event
+                    String date = generateRandomDate();
+                    double price = generateRandomPrice();
+
+                    String name = eventMap['name'] ?? 'No Name';
+                    String description =
+                        eventMap['description'] ?? 'No Description';
+                    String image = eventMap['image'] ??
+                        'https://placehold.it/100'; // Provide a placeholder image if null
+
+                    // Create an Event object from the eventMap
+                    Event event = Event(
+                      name: name,
+                      date: date,
+                      price: price,
+                      description: description,
+                      image: image,
+                    );
+
                     return Stack(
                       children: [
-                        EventCard(
-                          eventName: event['name']!,
-                          description: event['description']!,
-                          image: event['image']!,
-                          isSaved: _savedEvents[index],
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TicketBookingPage(event: event),
+                              ),
+                            );
+                          },
+                          child: EventCard(
+                            eventName: event.name,
+                            description: event.description,
+                            image: event.image,
+                            isSaved: _savedEvents[index],
+                          ),
                         ),
-                        // Show LIKE or DISLIKE text if needed
                         if (_swipeFeedback != null &&
                             _currentEventIndex == index)
                           Positioned(
@@ -154,65 +311,41 @@ class _EventCardScreenState extends State<EventCardScreen> {
                   },
                 ),
               ),
-
-              // Bottom Action Row
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20.0),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // Share button (new functionality)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: _buildNoSwipeButton(
-                        FaIcon(
-                          FontAwesomeIcons.share,
-                          size: 30,
-                          color: Color(0xFFA1A3A5),
-                        ),
-                        Colors.white,
-                        shareEvent,
-                      ),
+                    _buildNoSwipeButton(
+                      FaIcon(FontAwesomeIcons.share,
+                          size: 30, color: Color(0xFFA1A3A5)),
+                      Colors.white,
+                      shareEvent,
                     ),
-
-                    // Dislike button
                     _buildSwipeButton(
-                      FaIcon(
-                        FontAwesomeIcons.xmark,
-                        size: 30,
-                        color: Color(0xFF63E6BE),
-                      ),
+                      FaIcon(FontAwesomeIcons.xmark,
+                          size: 30, color: Color(0xFF63E6BE)),
                       Colors.white,
                       CardSwiperDirection.left,
                       dislikeEvent,
                     ),
-
-                    // Like button
                     _buildSwipeButton(
-                      FaIcon(
-                        FontAwesomeIcons.solidHeart,
-                        size: 30,
-                        color: Color(0xFFFB0909),
-                      ),
+                      FaIcon(FontAwesomeIcons.solidHeart,
+                          size: 30, color: Color(0xFFFB0909)),
                       Colors.white,
                       CardSwiperDirection.right,
                       likeEvent,
                     ),
-
-                    // Save button (Bookmark)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: _buildNoSwipeButton(
-                        FaIcon(
-                          FontAwesomeIcons.solidBookmark,
-                          size: 30,
-                          color: _savedEvents[_currentEventIndex ?? 0]
-                              ? Colors.blue
-                              : Color(0xFF439FE5),
-                        ),
-                        Colors.white,
-                        saveEvent,
+                    _buildNoSwipeButton(
+                      FaIcon(
+                        FontAwesomeIcons.solidBookmark,
+                        size: 30,
+                        color: _savedEvents[_currentEventIndex ?? 0]
+                            ? Colors.blue
+                            : Color(0xFF439FE5),
                       ),
+                      Colors.white,
+                      () => bookmarkEvent(_currentEventIndex ?? 0),
                     ),
                   ],
                 ),
@@ -224,7 +357,6 @@ class _EventCardScreenState extends State<EventCardScreen> {
     );
   }
 
-  /// Button builder for LIKE and DISLIKE, which triggers a swipe
   Widget _buildSwipeButton(FaIcon icon, Color bgColor,
       CardSwiperDirection direction, Function onPress) {
     return Container(
@@ -244,14 +376,14 @@ class _EventCardScreenState extends State<EventCardScreen> {
       child: IconButton(
         icon: icon,
         onPressed: () {
+          HapticFeedback.lightImpact();
           onPress();
-          _controller.swipe(direction); // Triggers the actual card swipe
+          _controller.swipe(direction);
         },
       ),
     );
   }
 
-  /// Button builder for UNDO and SAVE, which do NOT trigger a swipe
   Widget _buildNoSwipeButton(FaIcon icon, Color bgColor, Function onPress) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -270,95 +402,139 @@ class _EventCardScreenState extends State<EventCardScreen> {
       child: IconButton(
         icon: icon,
         onPressed: () {
-          onPress(); // No swipe triggered
+          HapticFeedback.lightImpact();
+          onPress();
         },
       ),
     );
   }
 
-  // Action Methods
-
   void likeEvent() {
     setState(() {
       _swipeFeedback = 'LIKE';
     });
+
+    if (_currentEventIndex != null) {
+      final event = events[_currentEventIndex!];
+      _firestore.collection('user_actions').add({
+        'userId': userId,
+        'eventName': event['name'],
+        'action': 'like',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
   }
 
   void dislikeEvent() {
     setState(() {
       _swipeFeedback = 'DISLIKE';
     });
+
+    if (_currentEventIndex != null) {
+      final event = events[_currentEventIndex!];
+      _firestore.collection('user_actions').add({
+        'userId': userId,
+        'eventName': event['name'],
+        'action': 'dislike',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
   }
 
-  void saveEvent() {
-    setState(() {
-      if (_currentEventIndex != null) {
-        _savedEvents[_currentEventIndex!] = true;
-        // Call the toggleBookmark method to update the bookmark state
-        _toggleBookmark(_currentEventIndex!);
+  void saveEvent() async {
+    if (_currentEventIndex != null) {
+      final index = _currentEventIndex!;
+      final event = events[index];
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Event Saved!")),
-        );
-      }
-    });
+      await _firestore
+          .collection('bookmarked_events')
+          .doc('$userId-${event["name"]}')
+          .set({
+        'userId': userId,
+        'eventName': event['name'],
+        'description': event['description'],
+        'imagePath': event['image'],
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      await _firestore.collection('user_actions').add({
+        'userId': userId,
+        'eventName': event['name'],
+        'action': 'bookmark',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      _toggleBookmark(index);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Event Saved to Cloud!")),
+      );
+    }
   }
 
-  /// Share the event details and image
   void shareEvent() async {
     final event = events[_currentEventIndex ?? 0];
     final eventDetails = "${event['name']} - ${event['description']}";
 
-    // Load the image from assets
     final byteData = await rootBundle.load(event['image']!);
     final buffer = byteData.buffer.asUint8List();
 
-    // Get the temporary directory path
     final tempDir = await getTemporaryDirectory();
     final tempImage = File('${tempDir.path}/${event['name']}.jpg');
-
-    // Write the image to the temporary directory
     await tempImage.writeAsBytes(buffer);
 
-    // Share both the text and image using Share.share
-    await Share.share(
-      eventDetails, // Event details text
-      subject: 'Check out this event!', // Optional subject
-      sharePositionOrigin: Rect.fromLTWH(0, 0, 0, 0),
+    await Share.shareXFiles(
+      [XFile(tempImage.path)],
+      text: eventDetails,
+      subject: 'Check out this event!',
     );
 
-    // Optionally, show a confirmation message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Event Shared!")),
     );
   }
 
-  /// Undo the last LIKE or DISLIKE action, bringing back the last swiped event
-  void undoAction() {
-    if (_actionHistory.isNotEmpty) {
-      setState(() {
-        final lastAction = _actionHistory.removeLast();
-        final lastEventIndex = lastAction['eventIndex'];
-
-        // Ensure that the lastEventIndex is valid
-        if (lastEventIndex != null &&
-            lastEventIndex >= 0 &&
-            lastEventIndex < events.length) {
-          // Simply revert to the previous event in history
-          _swipeFeedback = null; // Clear the swipe feedback
-          _currentEventIndex =
-              lastEventIndex; // Move back to the previous event
-        }
-      });
-    }
-  }
-
-  // Toggle bookmark state for an event
   void _toggleBookmark(int index) {
     setState(() {
-      _savedEvents[index] =
-          !_savedEvents[index]; // Toggle the saved state for the event
+      _savedEvents[index] = true;
     });
+  }
+
+  Future<void> bookmarkEvent(int index) async {
+    final event = events[index];
+
+    final bookmarkedEvent = {
+      'title': event['name'],
+      'description': event['description'],
+      'imageUrl': event['image'], // Use real URL if hosted
+      'date': '2025-05-15', // Replace with dynamic date if available
+      'location': 'London Stadium', // Replace with actual location if available
+      'timestamp': FieldValue.serverTimestamp(),
+    };
+
+    try {
+      // Save the event to Firestore under the user's bookmarked events
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('bookmarkedEvents')
+          .doc(event['name']) // Unique ID
+          .set(bookmarkedEvent);
+
+      setState(() {
+        _savedEvents[index] = true;
+      });
+
+      // Show a confirmation snackbar that the event is saved to the cloud
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${event['name']} saved to cloud!')),
+      );
+    } catch (e) {
+      print('Error bookmarking event: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save ${event['name']} to cloud.')),
+      );
+    }
   }
 }
 
@@ -369,12 +545,12 @@ class EventCard extends StatelessWidget {
   final bool isSaved;
 
   const EventCard({
-    Key? key,
+    super.key,
     required this.eventName,
     required this.description,
     required this.image,
     required this.isSaved,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

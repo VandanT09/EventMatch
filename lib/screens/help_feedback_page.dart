@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class HelpAndFeedbackPage extends StatelessWidget {
-  const HelpAndFeedbackPage({Key? key}) : super(key: key);
+class HelpAndFeedbackPage extends StatefulWidget {
+  const HelpAndFeedbackPage({super.key});
+
+  @override
+  State<HelpAndFeedbackPage> createState() => _HelpAndFeedbackPageState();
+}
+
+class _HelpAndFeedbackPageState extends State<HelpAndFeedbackPage> {
+  final TextEditingController _feedbackController = TextEditingController();
 
   void _showEmailDialog(BuildContext context) {
     showDialog(
@@ -19,6 +28,61 @@ class HelpAndFeedbackPage extends StatelessWidget {
     );
   }
 
+  Future<void> _submitFeedback() async {
+    final feedback = _feedbackController.text.trim();
+
+    if (feedback.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter some feedback.')),
+      );
+      return;
+    }
+
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must be logged in to send feedback.'),
+        ),
+      );
+      return;
+    }
+
+    // Immediately show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Feedback submitted successfully!')),
+    );
+
+    _feedbackController.clear(); // Clear input right away
+
+    // Save feedback to Firestore in the background
+    try {
+      await FirebaseFirestore.instance.collection('user_feedback').add({
+        'uid': uid,
+        'feedback': feedback,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Error saving feedback: $e'); // Log error, but don't show user
+    }
+  }
+
+  Widget _buildExpandableCard(String title, String content) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ExpansionTile(
+        title: Text(title),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(content),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,7 +94,6 @@ class HelpAndFeedbackPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // FAQ Section
           const Text(
             'Frequently Asked Questions',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -38,20 +101,17 @@ class HelpAndFeedbackPage extends StatelessWidget {
           const SizedBox(height: 16),
           _buildExpandableCard(
             'How do I create an event?',
-            'To create an event, go to the Calendar page and tap the + button. Fill in the event details like title, date, time, and description.',
+            'To create an event, go to the Calendar page and tap the + button...',
           ),
           _buildExpandableCard(
             'How do I invite friends?',
-            'You can invite friends by sharing the event link or using the Invite Friends option in the side menu.',
+            'You can invite friends by sharing the event link or using the Invite Friends option...',
           ),
           _buildExpandableCard(
             'How do I change my profile?',
-            'Go to Profile page from the bottom navigation bar and tap the Edit Profile button to update your information.',
+            'Go to Profile page and tap the Edit Profile button to update your info.',
           ),
-
           const SizedBox(height: 24),
-
-          // Contact Support Section
           const Text(
             'Contact Support',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -65,10 +125,7 @@ class HelpAndFeedbackPage extends StatelessWidget {
               onTap: () => _showEmailDialog(context),
             ),
           ),
-
           const SizedBox(height: 24),
-
-          // Feedback Section
           const Text(
             'Send Feedback',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -78,10 +135,10 @@ class HelpAndFeedbackPage extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const TextField(
-                    decoration: InputDecoration(
+                  TextField(
+                    controller: _feedbackController,
+                    decoration: const InputDecoration(
                       labelText: 'Your Feedback',
                       hintText: 'Tell us what you think about the app...',
                       border: OutlineInputBorder(),
@@ -90,24 +147,14 @@ class HelpAndFeedbackPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Thank you for your feedback!'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
+                    onPressed: _submitFeedback,
                     child: const Text('Submit Feedback'),
                   ),
                 ],
               ),
             ),
           ),
-
           const SizedBox(height: 24),
-
-          // App Info Section
           const Text(
             'App Information',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -129,21 +176,6 @@ class HelpAndFeedbackPage extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpandableCard(String title, String content) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ExpansionTile(
-        title: Text(title),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(content),
           ),
         ],
       ),

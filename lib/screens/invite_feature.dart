@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
-import 'dart:math'; // For generating random invite codes
+import 'dart:math';
+import 'home_page.dart'; // For generating random invite codes
 
 class InvitePage extends StatelessWidget {
   const InvitePage({super.key});
@@ -27,7 +28,10 @@ class InvitePage extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
             onPressed: () {
-              Navigator.of(context).pop;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomePage()),
+              );
             },
             icon: Icon(
               Icons.arrow_back,

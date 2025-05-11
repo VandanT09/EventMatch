@@ -1,23 +1,23 @@
-// main.dart
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:new_eventmatch/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
-import 'screens/auth_page.dart';
-import 'screens/home_page.dart'; // Ensure correct import for HomePage
+import 'screens/theme_notifier.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    print("Firebase Initialized");
-    runApp(const MyApp());
-  } catch (e) {
-    print(e.toString());
-  }
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeNotifier(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -25,22 +25,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+
     return MaterialApp(
       title: 'EventMatch',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: const Color(0xFFE86343),
         primarySwatch: MaterialColor(0xFFE86343, {
-          50: const Color(0xFFFEF2F0),
-          100: const Color(0xFFFDE6E2),
-          200: const Color(0xFFFBCDC5),
-          300: const Color(0xFFF9B3A8),
-          400: const Color(0xFFF6998B),
-          500: const Color(0xFFE86343),
-          600: const Color(0xFFD15B3D),
-          700: const Color(0xFFBA5237),
-          800: const Color(0xFFA34931),
-          900: const Color(0xFF8C402B),
+          50: Color(0xFFFEF2F0),
+          100: Color(0xFFFDE6E2),
+          200: Color(0xFFFBCDC5),
+          300: Color(0xFFF9B3A8),
+          400: Color(0xFFF6998B),
+          500: Color(0xFFE86343),
+          600: Color(0xFFD15B3D),
+          700: Color(0xFFBA5237),
+          800: Color(0xFFA34931),
+          900: Color(0xFF8C402B),
         }),
         scaffoldBackgroundColor: Colors.white,
         appBarTheme: const AppBarTheme(
@@ -57,12 +59,9 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SplashScreen(),
-        '/auth': (context) => const AuthPage(),
-        '/home': (context) => const HomePage(),
-      },
+      darkTheme: ThemeData.dark(),
+      themeMode: themeNotifier.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      home: const SplashScreen(),
     );
   }
 }

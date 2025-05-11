@@ -1,34 +1,28 @@
 plugins {
     id "com.android.application"
-    // START: FlutterFire Configuration
-    id 'com.google.gms.google-services'
-    // END: FlutterFire Configuration
+    id 'com.google.gms.google-services' // Ensure this is included
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
 android {
     namespace = "com.example.new_eventmatch"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17  // Set to Java 17
-        targetCompatibility = JavaVersion.VERSION_17  // Set to Java 17
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "17"  // Set to Java 17 for compatibility
+        jvmTarget = "17"
     }
 
     defaultConfig {
-        // Unique Application ID
         applicationId = "com.example.new_eventmatch"
-        
-        // Updated minSdkVersion for firebase_auth compatibility
         minSdkVersion 23
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -43,3 +37,16 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    implementation 'com.google.firebase:firebase-analytics:21.5.0'
+    implementation 'com.google.firebase:firebase-firestore:24.11.0'
+    implementation 'com.google.firebase:firebase-storage:20.0.0' // Add this for Firebase storage if you need it
+    implementation 'com.google.android.gms:play-services-auth:20.2.0' // For authentication if needed
+    implementation 'com.google.firebase:firebase-messaging:23.1.0' // For Firebase messaging if needed
+    implementation 'com.google.firebase:firebase-crashlytics:18.2.1'  // Ensure this is added
+}
+
+// Ensure to add this in your app-level build.gradle for Firebase initialization
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics' 
